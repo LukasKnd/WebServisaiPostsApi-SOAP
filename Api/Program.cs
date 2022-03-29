@@ -13,11 +13,8 @@ builder.Services.AddDbContext<DbContext>(opts => opts.UseSqlite("Data Source=Pos
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
