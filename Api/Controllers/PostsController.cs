@@ -32,17 +32,16 @@ public class PostsController : ControllerBase
             return NotFound();
         }
 
-        var post = new Post
+        return new Post
         {
             Id = postInDb.Id,
             Content = postInDb.Content,
             Title = postInDb.Title,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
-            Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
+            Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!,
+            Contact = postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : null
         };
-
-        return post with { Contact = postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : null };
     }
     
     [HttpGet]
