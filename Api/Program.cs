@@ -1,3 +1,4 @@
+using Api.Services;
 using Microsoft.EntityFrameworkCore;
 using DbContext = Api.DbContext;
 
@@ -9,6 +10,11 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DbContext>(opts => opts.UseSqlite("Data Source=Posts.db"));
+
+builder.Services.AddHttpClient<IContactsService, ContactsService>(client =>
+{
+    client.BaseAddress = new Uri("http://host.docker.internal:5000/");
+});
 
 var app = builder.Build();
 

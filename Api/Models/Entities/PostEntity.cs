@@ -6,4 +6,6 @@ public class PostEntity : BaseEntity
     public string Title { get; set; } = null!;
     public string Content { get; set; } = null!;
     public string TagsJson { get; set; } = null!;
+    
+    public int? ContactId { get; set; }
 }

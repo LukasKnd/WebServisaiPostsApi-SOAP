@@ -23,6 +23,9 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -50,28 +53,28 @@ namespace Api.Migrations
                         {
                             Id = 1,
                             Content = "Content1",
-                            Created = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7902),
+                            Created = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2985),
                             TagsJson = "[]",
                             Title = "Title1",
-                            Updated = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7903)
+                            Updated = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2986)
                         },
                         new
                         {
                             Id = 2,
                             Content = "Content2",
-                            Created = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7904),
+                            Created = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2987),
                             TagsJson = "[]",
                             Title = "Title2",
-                            Updated = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7905)
+                            Updated = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2987)
                         },
                         new
                         {
                             Id = 3,
                             Content = "Content3",
-                            Created = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7905),
+                            Created = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2988),
                             TagsJson = "[]",
                             Title = "Title3",
-                            Updated = new DateTime(2022, 4, 3, 20, 30, 7, 391, DateTimeKind.Utc).AddTicks(7906)
+                            Updated = new DateTime(2022, 5, 2, 20, 12, 44, 728, DateTimeKind.Utc).AddTicks(2988)
                         });
                 });
 #pragma warning restore 612, 618

@@ -1,7 +1,8 @@
 using System.Text.Json;
+using Api.Exceptions;
 using Api.Models;
 using Api.Models.Entities;
-using Microsoft.AspNetCore.JsonPatch;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +13,12 @@ namespace Api.Controllers;
 public class PostsController : ControllerBase
 {
     private readonly DbContext _dbContext;
+    private readonly IContactsService _contactsService;
 
-    public PostsController(DbContext dbContext)
+    public PostsController(DbContext dbContext, IContactsService contactsService)
     {
         _dbContext = dbContext;
+        _contactsService = contactsService;
     }
 
     [HttpGet("{id}", Name = "GetPost")]
@@ -29,42 +32,60 @@ public class PostsController : ControllerBase
             return NotFound();
         }
 
-        return new Post
+        var post = new Post
         {
-            Id = postInDb.Id, 
-            Content = postInDb.Content, 
-            Title = postInDb.Title, 
+            Id = postInDb.Id,
+            Content = postInDb.Content,
+            Title = postInDb.Title,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
         };
+
+        return post with { Contact = postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : null };
     }
     
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IEnumerable<Post>> GetPosts()
+    public async IAsyncEnumerable<Post> GetPosts()
     {
-        return (await _dbContext.Posts.ToListAsync()).Select(x =>
-            new Post
+        var postsInDb = await _dbContext.Posts.ToListAsync();
+        
+        foreach (var postEntity in postsInDb)
+        {
+            yield return new Post
             {
-                Id = x.Id,
-                Content = x.Content,
-                Title = x.Title,
-                Created = x.Created,
-                Updated = x.Updated,
-                Tags = JsonSerializer.Deserialize<IEnumerable<string>>(x.TagsJson)!
-            });
+                Id = postEntity.Id,
+                Content = postEntity.Content,
+                Title = postEntity.Title,
+                Created = postEntity.Created,
+                Updated = postEntity.Updated,
+                Contact = postEntity.ContactId != null ? await GetContact(postEntity.ContactId.Value) : null,
+                Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postEntity.TagsJson)!
+            };
+        }
     }
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreatePost(SavePostRequest request)
     {
+        Contact? contactInfo = null;
+        if (request.ContactId != null)
+        {
+            contactInfo = await GetContact(request.ContactId.Value);
+            if (contactInfo == null)
+            {
+                return ReturnContactNotFoundBadRequest();
+            }
+        }
+        
         var entity = new PostEntity
         {
             Content = request.Content, 
             Title = request.Title,
-            TagsJson = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : "[]"
+            TagsJson = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : "[]",
+            ContactId = request.ContactId
         };
         _dbContext.Posts.Add(entity);
         await _dbContext.SaveChangesAsync();
@@ -76,10 +97,11 @@ public class PostsController : ControllerBase
                 Title = entity.Title, 
                 Created = entity.Created,
                 Updated = entity.Updated,
+                Contact = contactInfo,
                 Tags = JsonSerializer.Deserialize<IEnumerable<string>>(entity.TagsJson)!
             });
     }
-    
+
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -90,6 +112,17 @@ public class PostsController : ControllerBase
         {
             return NotFound();
         }
+        
+        Contact? contactInfo = null;
+        if (post.ContactId != null)
+        {
+            contactInfo = await GetContact(post.ContactId.Value);
+            if (contactInfo == null)
+            {
+                return ReturnContactNotFoundBadRequest();
+            }
+        }
+        
         postInDb.Content = post.Content!;
         postInDb.Title = post.Title!;
         postInDb.TagsJson = post.Tags != null ? JsonSerializer.Serialize(post.Tags) : "[]";
@@ -100,6 +133,7 @@ public class PostsController : ControllerBase
             Id = postInDb.Id, 
             Content = postInDb.Content,
             Title = postInDb.Title,
+            Contact = contactInfo,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
@@ -109,33 +143,56 @@ public class PostsController : ControllerBase
     [HttpPatch("{id}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<Post>> PatchPost(int id, [FromBody] JsonPatchDocument<SavePostRequest> patchDoc)
+    public async Task<ActionResult<Post>> PatchPost(int id, [FromBody] PatchPostRequest request)
     {
         var postInDb = await _dbContext.Posts.FindAsync(id);
         if (postInDb == null)
         {
             return NotFound();
         }
-
-        var prefillData = new SavePostRequest
+        
+        Contact? contactInfo = null;
+        if (request.ContactId != null)
         {
+            contactInfo = await GetContact(request.ContactId.Value);
+            if (contactInfo == null)
+            {
+                return ReturnContactNotFoundBadRequest();
+            }
+        }
+
+        var saveRequest = new SavePostRequest
+        {
+            ContactId = request.ContactId,
             Content = postInDb.Content, 
             Title = postInDb.Title,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)
         };
-        patchDoc.ApplyTo(prefillData, ModelState);
-        if (!ModelState.IsValid)
+
+        if (request.Content != null)
         {
-            return BadRequest(ModelState);
+            saveRequest = saveRequest with { Content = request.Content };
         }
-        if (!TryValidateModel(prefillData))
+
+        if (request.Title != null)
+        {
+            saveRequest = saveRequest with { Title = request.Title };
+        }
+
+        if (request.Tags != null)
+        {
+            saveRequest = saveRequest with { Tags = request.Tags };
+        }
+        
+        if (!TryValidateModel(saveRequest))
         {
             return BadRequest(ModelState);
         }
 
-        postInDb.Content = prefillData.Content;
-        postInDb.Title = prefillData.Title;
-        postInDb.TagsJson = JsonSerializer.Serialize(prefillData.Tags);
+        postInDb.ContactId = saveRequest.ContactId;
+        postInDb.Content = saveRequest.Content;
+        postInDb.Title = saveRequest.Title;
+        postInDb.TagsJson = JsonSerializer.Serialize(saveRequest.Tags);
         await _dbContext.SaveChangesAsync();
         return new Post
         {
@@ -144,6 +201,7 @@ public class PostsController : ControllerBase
             Title = postInDb.Title,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
+            Contact = contactInfo,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
         };
     }
@@ -162,5 +220,23 @@ public class PostsController : ControllerBase
         _dbContext.Posts.Remove(postInDb);
         await _dbContext.SaveChangesAsync();
         return NoContent();
+    }
+
+    private BadRequestObjectResult ReturnContactNotFoundBadRequest()
+    {
+        ModelState.Clear();
+        ModelState.AddModelError("ContactId", "Contact not found");
+        return BadRequest(new ValidationProblemDetails(ModelState));
+    }
+    
+    private async Task<Contact?> GetContact(int contactId)
+    {
+        try
+        {
+            return await _contactsService.GetContact(contactId);
+        } catch (ContactNotFoundException)
+        {
+            return null;
+        }
     }
 }

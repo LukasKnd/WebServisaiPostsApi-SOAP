@@ -11,4 +11,6 @@ public record SavePostRequest
     public string Content { get; init; } = null!;
 
     public IEnumerable<string>? Tags { get; init; }
+    
+    public int? ContactId { get; init; }
 }
