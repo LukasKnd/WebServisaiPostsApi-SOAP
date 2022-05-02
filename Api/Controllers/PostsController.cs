@@ -151,24 +151,19 @@ public class PostsController : ControllerBase
             return NotFound();
         }
         
-        Contact? contactInfo = null;
-        if (request.ContactId != null)
-        {
-            contactInfo = await GetContact(request.ContactId.Value);
-            if (contactInfo == null)
-            {
-                return ReturnContactNotFoundBadRequest();
-            }
-        }
-
         var saveRequest = new SavePostRequest
         {
-            ContactId = request.ContactId,
+            ContactId = postInDb.ContactId,
             Content = postInDb.Content, 
             Title = postInDb.Title,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)
         };
 
+        if (request.ContactId != null)
+        {
+            saveRequest = saveRequest with { ContactId = request.ContactId };
+        }
+        
         if (request.Content != null)
         {
             saveRequest = saveRequest with { Content = request.Content };
@@ -186,7 +181,17 @@ public class PostsController : ControllerBase
         
         if (!TryValidateModel(saveRequest))
         {
-            return BadRequest(ModelState);
+            return BadRequest(new ValidationProblemDetails(ModelState));
+        }
+        
+        Contact? contactInfo = null;
+        if (request.ContactId != null)
+        {
+            contactInfo = await GetContact(request.ContactId.Value);
+            if (contactInfo == null)
+            {
+                return ReturnContactNotFoundBadRequest();
+            }
         }
 
         postInDb.ContactId = saveRequest.ContactId;
@@ -201,7 +206,7 @@ public class PostsController : ControllerBase
             Title = postInDb.Title,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
-            Contact = contactInfo,
+            Contact = request.ContactId == null && postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : contactInfo,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
         };
     }
