@@ -1,6 +1,6 @@
 #Running
 ```
-git clone https://github.com/LukasKnd/WebServisaiPostsApi.git
+git clone --recurse-submodules https://github.com/LukasKnd/WebServisaiPostsApi.git
 cd WebServisaiPostsApi
 docker-compose up
 ```
