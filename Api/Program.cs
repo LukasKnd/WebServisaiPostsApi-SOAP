@@ -13,7 +13,7 @@ builder.Services.AddDbContext<DbContext>(opts => opts.UseSqlite("Data Source=Pos
 
 builder.Services.AddHttpClient<IContactsService, ContactsService>(client =>
 {
-    client.BaseAddress = new Uri("http://host.docker.internal:5000/");
+    client.BaseAddress = new Uri("http://contacts/");
 });
 
 var app = builder.Build();
