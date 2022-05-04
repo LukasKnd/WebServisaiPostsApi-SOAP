@@ -13,7 +13,7 @@ builder.Services.AddDbContext<DbContext>(opts => opts.UseSqlite("Data Source=Pos
 
 builder.Services.AddHttpClient<IContactsService, ContactsService>(client =>
 {
-    client.BaseAddress = new Uri("http://contacts/");
+    client.BaseAddress = new Uri("http://contacts:5000/");
 });
 
 var app = builder.Build();
