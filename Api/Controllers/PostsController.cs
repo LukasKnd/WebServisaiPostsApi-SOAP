@@ -69,22 +69,19 @@ public class PostsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreatePost(SavePostRequest request)
     {
-        Contact? contactInfo = null;
-        if (request.ContactId != null)
+        var contactInfo = await ProcessContact(request);
+
+        if (!ModelState.IsValid)
         {
-            contactInfo = await GetContact(request.ContactId.Value);
-            if (contactInfo == null)
-            {
-                return ReturnContactNotFoundBadRequest();
-            }
+            return BadRequest(new ValidationProblemDetails(ModelState));
         }
-        
+
         var entity = new PostEntity
         {
             Content = request.Content, 
             Title = request.Title,
             TagsJson = request.Tags != null ? JsonSerializer.Serialize(request.Tags) : "[]",
-            ContactId = request.ContactId
+            ContactId = contactInfo?.Id
         };
         _dbContext.Posts.Add(entity);
         await _dbContext.SaveChangesAsync();
@@ -101,6 +98,8 @@ public class PostsController : ControllerBase
             });
     }
 
+    
+
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -112,19 +111,17 @@ public class PostsController : ControllerBase
             return NotFound();
         }
         
-        Contact? contactInfo = null;
-        if (post.ContactId != null)
+        var contactInfo = await ProcessContact(post);
+
+        if (!ModelState.IsValid)
         {
-            contactInfo = await GetContact(post.ContactId.Value);
-            if (contactInfo == null)
-            {
-                return ReturnContactNotFoundBadRequest();
-            }
+            return BadRequest(new ValidationProblemDetails(ModelState));
         }
         
         postInDb.Content = post.Content!;
         postInDb.Title = post.Title!;
         postInDb.TagsJson = post.Tags != null ? JsonSerializer.Serialize(post.Tags) : "[]";
+        postInDb.ContactId = contactInfo?.Id;
         
         await _dbContext.SaveChangesAsync();
         return new Post
@@ -152,17 +149,11 @@ public class PostsController : ControllerBase
         
         var saveRequest = new SavePostRequest
         {
-            ContactId = postInDb.ContactId,
             Content = postInDb.Content, 
             Title = postInDb.Title,
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)
         };
 
-        if (request.ContactId != null)
-        {
-            saveRequest = saveRequest with { ContactId = request.ContactId };
-        }
-        
         if (request.Content != null)
         {
             saveRequest = saveRequest with { Content = request.Content };
@@ -183,17 +174,14 @@ public class PostsController : ControllerBase
             return BadRequest(new ValidationProblemDetails(ModelState));
         }
         
-        Contact? contactInfo = null;
-        if (request.ContactId != null)
+        var contactInfo = await ProcessContact(request);
+
+        if (!ModelState.IsValid)
         {
-            contactInfo = await GetContact(request.ContactId.Value);
-            if (contactInfo == null)
-            {
-                return ReturnContactNotFoundBadRequest();
-            }
+            return BadRequest(new ValidationProblemDetails(ModelState));
         }
 
-        postInDb.ContactId = saveRequest.ContactId;
+        postInDb.ContactId = contactInfo?.Id ?? postInDb.ContactId;
         postInDb.Content = saveRequest.Content;
         postInDb.Title = saveRequest.Title;
         postInDb.TagsJson = JsonSerializer.Serialize(saveRequest.Tags);
@@ -205,7 +193,7 @@ public class PostsController : ControllerBase
             Title = postInDb.Title,
             Created = postInDb.Created,
             Updated = postInDb.Updated,
-            Contact = request.ContactId == null && postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : contactInfo,
+            Contact = contactInfo ?? (postInDb.ContactId != null ? await GetContact(postInDb.ContactId.Value) : null),
             Tags = JsonSerializer.Deserialize<IEnumerable<string>>(postInDb.TagsJson)!
         };
     }
@@ -225,12 +213,47 @@ public class PostsController : ControllerBase
         await _dbContext.SaveChangesAsync();
         return NoContent();
     }
-
-    private BadRequestObjectResult ReturnContactNotFoundBadRequest()
+    
+    private async Task<Contact?> ProcessContact(IWithContactRequest request)
     {
-        ModelState.Clear();
-        ModelState.AddModelError("ContactId", "Contact not found");
-        return BadRequest(new ValidationProblemDetails(ModelState));
+        Contact? contactInfo = null;
+        if (request.ContactId != null)
+        {
+            try
+            {
+                contactInfo = await _contactsService.GetContact(request.ContactId.Value);
+            }
+            catch (ContactNotFoundException)
+            {
+                ModelState.Clear();
+                ModelState.AddModelError("ContactId", "Contact not found");
+            }
+        } else if (request.Contact != null)
+        {
+            try
+            {
+                if (request.Contact.Id != null)
+                {
+                    contactInfo = await _contactsService.UpdateContact(request.Contact);
+                }
+                else
+                {
+                    contactInfo = await _contactsService.CreateContact(request.Contact);
+                }
+            }
+            catch (ContactNotFoundException)
+            {
+                ModelState.Clear();
+                ModelState.AddModelError("Contact", "Contact not found");
+            }
+            catch (ContactBadRequestException e)
+            {
+                ModelState.Clear();
+                ModelState.AddModelError("Contact", e.Message);
+            }
+        }
+
+        return contactInfo;
     }
     
     private async Task<Contact?> GetContact(int contactId)

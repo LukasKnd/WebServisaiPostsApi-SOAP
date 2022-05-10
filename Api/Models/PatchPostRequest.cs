@@ -1,6 +1,6 @@
 ﻿namespace Api.Models;
 
-public class PatchPostRequest
+public class PatchPostRequest : IWithContactRequest
 {
     public string? Title { get; init; } = null!;
 
@@ -9,4 +9,6 @@ public class PatchPostRequest
     public IEnumerable<string>? Tags { get; init; }
     
     public int? ContactId { get; init; }
+    
+    public Contact? Contact { get; init; }
 }

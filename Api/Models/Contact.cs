@@ -5,7 +5,7 @@ namespace Api.Models;
 public record Contact
 {
     [JsonPropertyName("id")]
-    public int Id { get; init; }
+    public int? Id { get; init; }
     
     [JsonPropertyName("surname")]
     public string? Surname { get; init; }

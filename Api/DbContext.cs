@@ -12,9 +12,9 @@ public class DbContext : Microsoft.EntityFrameworkCore.DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<PostEntity>().HasData(
-            new PostEntity { Id = 1, Title = "Title1", Content = "Content1", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]"},
-            new PostEntity { Id = 2, Title = "Title2", Content = "Content2", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]"},
-            new PostEntity { Id = 3, Title = "Title3", Content = "Content3", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]"});
+            new PostEntity { Id = 1, Title = "Title1", Content = "Content1", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]", ContactId = 12345 },
+            new PostEntity { Id = 2, Title = "Title2", Content = "Content2", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]", ContactId = 12345 },
+            new PostEntity { Id = 3, Title = "Title3", Content = "Content3", Created = DateTime.UtcNow, Updated = DateTime.UtcNow, TagsJson = "[]", ContactId = 12345 });
         base.OnModelCreating(modelBuilder);
     }
     

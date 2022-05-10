@@ -2,7 +2,7 @@
 
 namespace Api.Models;
 
-public record SavePostRequest
+public record SavePostRequest : IWithContactRequest
 {
     [Required]
     public string Title { get; init; } = null!;
@@ -13,4 +13,6 @@ public record SavePostRequest
     public IEnumerable<string>? Tags { get; init; }
     
     public int? ContactId { get; init; }
+    
+    public Contact? Contact { get; init; }
 }
