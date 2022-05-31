@@ -1,21 +1,22 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace Api.Models;
 
+[DataContract(Namespace = "http://www.example.com/posts")]
 public record Contact
 {
-    [JsonPropertyName("id")]
+    [DataMember]
     public int? Id { get; init; }
     
-    [JsonPropertyName("surname")]
+    [DataMember]
     public string? Surname { get; init; }
     
-    [JsonPropertyName("name")]
+    [DataMember]
     public string? Name { get; init; }
     
-    [JsonPropertyName("number")]
+    [DataMember]
     public string? Number { get; init; }
     
-    [JsonPropertyName("email")]
+    [DataMember]
     public string? Email { get; init; }
 }

@@ -19,6 +19,7 @@ public class ContactsService : IContactsService
 
     public async Task<Contact> GetContact(int id)
     {
+        return new Contact();
         var response = await _client.GetAsync($"contacts/{id}");
 
         if (response.StatusCode == HttpStatusCode.NotFound)
@@ -34,6 +35,7 @@ public class ContactsService : IContactsService
 
     public async Task<Contact> CreateContact(Contact contact)
     {
+        return new Contact();
         contact = contact with { Id = _newid++ };
         
         var serialized = JsonSerializer.Serialize(contact);
@@ -52,6 +54,8 @@ public class ContactsService : IContactsService
     
     public async Task<Contact> UpdateContact(Contact contact)
     {
+        return new Contact();
+        
         var serialized = JsonSerializer.Serialize(contact with{ Id = null });
         
         var response = await _client.PutAsync($"contacts/{contact.Id}", new StringContent(serialized, Encoding.Default, MediaTypeNames.Application.Json));
