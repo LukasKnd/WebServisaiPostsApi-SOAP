@@ -1,11 +1,12 @@
 #Running
 ```
-git clone --recurse-submodules https://github.com/LukasKnd/WebServisaiPostsApi.git
-cd WebServisaiPostsApi
+git clone --recurse-submodules https://github.com/LukasKnd/WebServisaiPostsApi-SOAP.git
+cd WebServisaiPostsApi-SOAP
 docker-compose up
 ```
 
-Open swagger at
-````
-localhost/swagger
-````
+WSDL at
+
+```
+localhost/posts.asmx
+```
