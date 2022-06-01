@@ -163,7 +163,7 @@ public class PostsService: IPostsService
             }
             catch (ContactNotFoundException)
             {
-                throw new Exception("Contact with id: " + request.ContactId + " was not found");
+                throw new Exception("Contact with id: " + request.Contact.Id + " was not found");
             }
         }
 

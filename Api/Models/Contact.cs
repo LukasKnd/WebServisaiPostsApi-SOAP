@@ -1,4 +1,6 @@
-﻿using System.Runtime.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Api.Models;
 
@@ -6,17 +8,26 @@ namespace Api.Models;
 public record Contact
 {
     [DataMember]
+    [JsonPropertyName("id")]
     public int? Id { get; init; }
     
-    [DataMember]
+    [Required]
+    [DataMember(IsRequired = true)]
+    [JsonPropertyName("surname")]
     public string? Surname { get; init; }
     
-    [DataMember]
+    [Required]
+    [DataMember(IsRequired = true)]
+    [JsonPropertyName("name")]
     public string? Name { get; init; }
     
-    [DataMember]
+    [Required]
+    [DataMember(IsRequired = true)]
+    [JsonPropertyName("number")]
     public string? Number { get; init; }
     
-    [DataMember]
+    [Required]
+    [DataMember(IsRequired = true)]
+    [JsonPropertyName("email")]
     public string? Email { get; init; }
 }
